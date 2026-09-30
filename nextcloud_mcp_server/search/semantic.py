@@ -17,6 +17,7 @@ from nextcloud_mcp_server.search.algorithms import (
     build_search_result_from_point,
 )
 from nextcloud_mcp_server.search.bm25_hybrid import GRANULARITY_CHUNK
+from nextcloud_mcp_server.search.query_instruction import query_embedding_text
 from nextcloud_mcp_server.vector.payload_keys import ACL_HASH
 from nextcloud_mcp_server.vector.qdrant_client import get_qdrant_client
 
@@ -133,7 +134,7 @@ class SemanticSearchAlgorithm(SearchAlgorithm):
 
         # Generate embedding for query
         provider = get_provider()
-        query_embedding = await provider.embed(query)
+        query_embedding = await provider.embed(query_embedding_text(query, settings))
         # Store for reuse by callers (e.g. the PCA projection in
         # vector/visualization.py)
         self.query_embedding = query_embedding
