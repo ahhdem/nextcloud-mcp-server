@@ -54,6 +54,7 @@ from nextcloud_mcp_server.search.context import (
     get_chunk_bbox_and_page_from_qdrant,
     get_chunk_with_context,
 )
+from nextcloud_mcp_server.search.query_instruction import query_embedding_text
 from nextcloud_mcp_server.search.relevance import (
     RELEVANCE_ORDINAL,
     filter_by_relevance,
@@ -775,7 +776,9 @@ async def unified_search(request: Request) -> JSONResponse:
                     query_embedding = search_algo.query_embedding
                 else:
                     provider = get_provider()
-                    query_embedding = await provider.embed(query)
+                    query_embedding = await provider.embed(
+                        query_embedding_text(query, get_settings())
+                    )
 
                 pca_data = await compute_pca_coordinates(
                     paginated_results, query_embedding
@@ -1122,7 +1125,9 @@ async def vector_search(request: Request) -> JSONResponse:
                     query_embedding = search_algo.query_embedding
                 else:
                     provider = get_provider()
-                    query_embedding = await provider.embed(query)
+                    query_embedding = await provider.embed(
+                        query_embedding_text(query, get_settings())
+                    )
 
                 pca_data = await compute_pca_coordinates(all_results, query_embedding)
                 response_data["coordinates_3d"] = pca_data["coordinates_3d"]

@@ -219,6 +219,11 @@ _DEFAULTS: dict[str, Any] = {
     # the model's full width). Provider-agnostic: only one provider is active
     # at a time, so a single knob covers openai/ollama/gateway.
     "embedding_dimensions": None,
+    # Task instruction prepended to search QUERIES (never documents) before
+    # they are embedded, for instruction-aware embedders such as Qwen3-Embedding
+    # or E5-instruct: ``Instruct: {instruction}\nQuery: {query}``. Empty = the
+    # query is embedded as-is. Documents are unaffected, so no reindex needed.
+    "embedding_query_instruction": "",
     # Simple (fallback) embedding dimension
     "simple_embedding_dimension": 384,
     # Document chunking
@@ -1368,6 +1373,12 @@ class Settings:
     # models — nothing upstream validates this (Ollama happily truncates a
     # non-MRL model, with silent recall loss), so it is the operator's call.
     embedding_dimensions: int | None = None
+
+    # Instruction for instruction-aware embedders, applied to the query side of
+    # search only (see _DEFAULTS). Documents are indexed without it, which is
+    # what Qwen3-Embedding/E5-instruct expect, so setting or changing it never
+    # requires a reindex. Empty (default) = queries are embedded raw.
+    embedding_query_instruction: str = ""
 
     # Simple (fallback) provider — dimension when no real provider configured
     simple_embedding_dimension: int = 384

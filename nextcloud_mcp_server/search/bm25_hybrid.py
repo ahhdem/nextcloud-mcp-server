@@ -20,6 +20,7 @@ from nextcloud_mcp_server.search.algorithms import (
     SearchResult,
     build_search_result_from_point,
 )
+from nextcloud_mcp_server.search.query_instruction import query_embedding_text
 from nextcloud_mcp_server.vector.qdrant_client import get_qdrant_client
 
 logger = logging.getLogger(__name__)
@@ -167,7 +168,12 @@ class BM25HybridSearchAlgorithm(SearchAlgorithm):
         with trace_operation("search.dense_embedding"):
             if self.query_embedding is not None and self._embedded_query == query:
                 return self.query_embedding
-            dense_embedding, query_tokens = await provider.embed_with_usage(query)
+            # The instruction prefix (EMBEDDING_QUERY_INSTRUCTION) is dense-only:
+            # the BM25 sparse prefetch encodes the raw query. The cache above
+            # stays keyed on the raw query; the instruction is process-constant.
+            dense_embedding, query_tokens = await provider.embed_with_usage(
+                query_embedding_text(query, settings)
+            )
             # Store for reuse by callers (e.g. the PCA projection in
             # vector/visualization.py) and for the usage-metering hook in
             # server/semantic.py (token count).
