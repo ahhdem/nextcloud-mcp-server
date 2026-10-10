@@ -807,11 +807,13 @@ class OAuthAppContext:
 
 
 class BasicAuthMiddleware:
-    """Middleware to extract BasicAuth credentials from Authorization header.
+    """Middleware to extract pass-through credentials from Authorization header.
 
     For multi-user BasicAuth pass-through mode, this middleware extracts
     username/password from the Authorization: Basic header and stores them
-    in the request state for use by the context layer.
+    in the request state for use by the context layer. An
+    ``Authorization: Bearer`` token is stored as ``bearer_token`` instead, for
+    the context layer to pass through to Nextcloud as-is.
 
     The credentials are NOT stored persistently - they are passed through
     directly to Nextcloud APIs for each request (stateless).
@@ -846,6 +848,15 @@ class BasicAuthMiddleware:
                     )
                 except Exception as e:
                     logger.warning("Failed to extract BasicAuth credentials: %s", e)
+            elif auth_header[:7].lower() == b"bearer ":
+                # OAuth bearer pass-through: the token is handed to Nextcloud
+                # unchanged, and Nextcloud validates it (user_oidc
+                # --check-bearer). Nothing here trusts or decodes it.
+                token = auth_header[7:].strip().decode("latin-1")
+                if token:
+                    scope.setdefault("state", {})
+                    scope["state"]["bearer_token"] = token
+                    logger.debug("Bearer token stored for pass-through")
 
         await self.app(scope, receive, send)
 
